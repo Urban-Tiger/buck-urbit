@@ -50,8 +50,13 @@ async function main() {
   const files = fs
     .readdirSync(deploymentsDir)
     .filter((f) => f.startsWith("deployment-") && f.endsWith(".json"))
-    .sort()
-    .reverse();
+    .map(f => ({ 
+      name: f, 
+      path: `${deploymentsDir}/${f}`,
+      stats: fs.statSync(`${deploymentsDir}/${f}`)
+    }))
+    .sort((a, b) => b.stats.mtime - a.stats.mtime)
+    .map(f => f.name);
 
   if (files.length === 0) {
     console.error("[ERROR] No deployment files found!");

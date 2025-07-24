@@ -116,9 +116,9 @@ describe("UrbitVault", function () {
       await urbitVault.connect(user1).depositStar(STAR_ID);
 
       expect(await urbitToken.balanceOf(user1.address)).to.equal(
-        PLANETS_PER_STAR
+        ethers.parseEther(PLANETS_PER_STAR.toString())
       );
-      expect(await ustarToken.balanceOf(user1.address)).to.equal(1);
+      expect(await ustarToken.balanceOf(user1.address)).to.equal(ethers.parseEther("1"));
     });
 
     it("Should transfer star to vault", async function () {
@@ -180,8 +180,8 @@ describe("UrbitVault", function () {
     it("Should allow redeeming stars with correct tokens", async function () {
       await urbitToken
         .connect(user1)
-        .approve(await urbitVault.getAddress(), PLANETS_PER_STAR);
-      await ustarToken.connect(user1).approve(await urbitVault.getAddress(), 1);
+        .approve(await urbitVault.getAddress(), ethers.parseEther(PLANETS_PER_STAR.toString()));
+      await ustarToken.connect(user1).approve(await urbitVault.getAddress(), ethers.parseEther("1"));
 
       await expect(urbitVault.connect(user1).redeemStar(STAR_ID))
         .to.emit(urbitVault, "StarRedeemed")
@@ -193,8 +193,8 @@ describe("UrbitVault", function () {
     it("Should burn tokens and transfer star back", async function () {
       await urbitToken
         .connect(user1)
-        .approve(await urbitVault.getAddress(), PLANETS_PER_STAR);
-      await ustarToken.connect(user1).approve(await urbitVault.getAddress(), 1);
+        .approve(await urbitVault.getAddress(), ethers.parseEther(PLANETS_PER_STAR.toString()));
+      await ustarToken.connect(user1).approve(await urbitVault.getAddress(), ethers.parseEther("1"));
 
       await urbitVault.connect(user1).redeemStar(STAR_ID);
 
@@ -290,7 +290,7 @@ describe("UrbitVault", function () {
       const values = {
         owner: user1.address,
         spender: await urbitVault.getAddress(),
-        value: PLANETS_PER_STAR,
+        value: ethers.parseEther(PLANETS_PER_STAR.toString()),
         nonce: nonce,
         deadline: deadline,
       };
@@ -302,7 +302,7 @@ describe("UrbitVault", function () {
       await urbitToken.permit(
         user1.address,
         await urbitVault.getAddress(),
-        PLANETS_PER_STAR,
+        ethers.parseEther(PLANETS_PER_STAR.toString()),
         deadline,
         v,
         r,
@@ -312,7 +312,7 @@ describe("UrbitVault", function () {
       // Verify approval was set
       expect(
         await urbitToken.allowance(user1.address, await urbitVault.getAddress())
-      ).to.equal(PLANETS_PER_STAR);
+      ).to.equal(ethers.parseEther(PLANETS_PER_STAR.toString()));
     });
 
     it("Should support permit on UstarToken", async function () {
@@ -339,7 +339,7 @@ describe("UrbitVault", function () {
       const values = {
         owner: user1.address,
         spender: await urbitVault.getAddress(),
-        value: 1,
+        value: ethers.parseEther("1"),
         nonce: nonce,
         deadline: deadline,
       };
@@ -350,7 +350,7 @@ describe("UrbitVault", function () {
       await ustarToken.permit(
         user1.address,
         await urbitVault.getAddress(),
-        1,
+        ethers.parseEther("1"),
         deadline,
         v,
         r,
@@ -359,7 +359,7 @@ describe("UrbitVault", function () {
 
       expect(
         await ustarToken.allowance(user1.address, await urbitVault.getAddress())
-      ).to.equal(1);
+      ).to.equal(ethers.parseEther("1"));
     });
 
     it("Should allow redemption with permit (gasless approval)", async function () {
@@ -396,7 +396,7 @@ describe("UrbitVault", function () {
       const urbitValues = {
         owner: user1.address,
         spender: await urbitVault.getAddress(),
-        value: PLANETS_PER_STAR,
+        value: ethers.parseEther(PLANETS_PER_STAR.toString()),
         nonce: urbitNonce,
         deadline: deadline,
       };
@@ -411,7 +411,7 @@ describe("UrbitVault", function () {
       const ustarValues = {
         owner: user1.address,
         spender: await urbitVault.getAddress(),
-        value: 1,
+        value: ethers.parseEther("1"),
         nonce: ustarNonce,
         deadline: deadline,
       };
@@ -455,7 +455,7 @@ describe("UrbitVault", function () {
         urbitToken.permit(
           user1.address,
           await urbitVault.getAddress(),
-          PLANETS_PER_STAR,
+          ethers.parseEther(PLANETS_PER_STAR.toString()),
           expiredDeadline,
           27, // dummy v
           ethers.ZeroHash, // dummy r

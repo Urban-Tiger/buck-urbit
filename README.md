@@ -124,9 +124,9 @@ function redeemStar(uint32 _starId) external
 
 ### Sepolia Testnet
 
-- **UrbitToken**: `0x19512ab0FB4823049300708bc50De0354026f6b5`
-- **UstarToken**: `0xb44FeE94f742d87b31c2e51b20609731ebf655B5`
-- **UrbitVault**: `0xA80be89cA43ee5Bd1360497a45c93420304B316d`
+- **UrbitToken**: `0x3C615fF007Fd1CF11862BAb5220dbe822E023F29`
+- **UstarToken**: `0xDFBad2CAe32d0E609a01F1ba32e07a12E9EBf967`
+- **UrbitVault**: `0x7a766d69beDf94B1b8924Df916c414f3930451Af`
 - Azimuth: `0xE6532b92148615418c1b4150dA4caC122b1C7F1a`
 - Ecliptic: `0xf49C4d09C0b98Fb2d199820eC99D22d39174D1A3`
 

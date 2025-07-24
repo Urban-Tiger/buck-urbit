@@ -78,8 +78,8 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
 
         depositedStars[_starId] = true;
 
-        urbitToken.mint(msg.sender, PLANETS_PER_STAR);
-        ustarToken.mint(msg.sender, 1);
+        urbitToken.mint(msg.sender, PLANETS_PER_STAR * 10**18);
+        ustarToken.mint(msg.sender, 1 * 10**18);
 
         emit StarDeposited(_starId, msg.sender);
     }
@@ -93,16 +93,16 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
             revert StarNotDeposited();
         }
 
-        if (urbitToken.balanceOf(msg.sender) < PLANETS_PER_STAR) {
+        if (urbitToken.balanceOf(msg.sender) < PLANETS_PER_STAR * 10**18) {
             revert InsufficientTokens();
         }
 
-        if (ustarToken.balanceOf(msg.sender) < 1) {
+        if (ustarToken.balanceOf(msg.sender) < 1 * 10**18) {
             revert InsufficientTokens();
         }
 
-        urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR);
-        ustarToken.burnFrom(msg.sender, 1);
+        urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR * 10**18);
+        ustarToken.burnFrom(msg.sender, 1 * 10**18);
 
         depositedStars[_starId] = false;
 
@@ -139,11 +139,11 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
             revert StarNotDeposited();
         }
 
-        if (urbitToken.balanceOf(msg.sender) < PLANETS_PER_STAR) {
+        if (urbitToken.balanceOf(msg.sender) < PLANETS_PER_STAR * 10**18) {
             revert InsufficientTokens();
         }
 
-        if (ustarToken.balanceOf(msg.sender) < 1) {
+        if (ustarToken.balanceOf(msg.sender) < 1 * 10**18) {
             revert InsufficientTokens();
         }
 
@@ -151,7 +151,7 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         urbitToken.permit(
             msg.sender,
             address(this),
-            PLANETS_PER_STAR,
+            PLANETS_PER_STAR * 10**18,
             _urbitDeadline,
             _urbitV,
             _urbitR,
@@ -161,15 +161,15 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         ustarToken.permit(
             msg.sender,
             address(this),
-            1,
+            1 * 10**18,
             _ustarDeadline,
             _ustarV,
             _ustarR,
             _ustarS
         );
 
-        urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR);
-        ustarToken.burnFrom(msg.sender, 1);
+        urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR * 10**18);
+        ustarToken.burnFrom(msg.sender, 1 * 10**18);
 
         depositedStars[_starId] = false;
 
