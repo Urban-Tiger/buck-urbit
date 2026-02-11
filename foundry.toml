@@ -1,0 +1,24 @@
+[profile.default]
+src = "contracts"
+out = "foundry-out"
+test = "test/foundry"
+libs = ["node_modules", "lib"]
+cache_path = "cache/foundry"
+auto_detect_solc = false
+solc_version = "0.8.20"
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 1
+via_ir = true
+dotenv = ".env"
+script = "script"
+skip = ["contracts/azimuth/**", "contracts/interfaces/ITreasuryProxy.sol"]
+
+remappings = [
+    "@openzeppelin/=node_modules/@openzeppelin/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+sepolia = { key = "${ETHERSCAN_API_KEY}" }

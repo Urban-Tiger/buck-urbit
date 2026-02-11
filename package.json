@@ -1,26 +1,19 @@
 {
   "name": "buck-urbit",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "test": "hardhat test",
-    "compile": "hardhat compile",
-    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
-    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
-    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
-    "node": "hardhat node",
-    "lint": "hardhat check"
+    "test": "forge test -vvv",
+    "build": "forge build",
+    "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url $SEPOLIA_URL --broadcast --verify",
+    "deploy:mainnet": "forge script script/Deploy.s.sol --rpc-url $MAINNET_URL --broadcast --verify",
+    "deploy:local": "forge script script/DeployLocal.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "node": "anvil"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
-    "hardhat": "^2.25.0"
-  },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.3.0",
-    "dotenv": "^17.0.1"
+    "@openzeppelin/contracts": "^5.3.0"
   }
 }
