@@ -180,6 +180,9 @@ The test suite covers:
 - Virgin star validation
 - Permit-based redemption
 - Edge cases and error conditions
+- Invariant fuzz testing (token supply ratios, deposit/redeem accounting)
+
+Static analysis via Slither passes with no findings above informational.
 
 ## License
 
