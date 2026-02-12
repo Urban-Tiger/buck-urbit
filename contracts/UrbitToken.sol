@@ -21,11 +21,15 @@ contract UrbitToken is ERC20, ERC20Permit, Ownable {
     {}
 
     /// @notice Mint new URBIT tokens
+    /// @param to The address to receive the minted tokens
+    /// @param amount The number of tokens to mint (18 decimals)
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 
-    /// @notice Burn URBIT tokens
+    /// @notice Burn URBIT tokens from an account (requires prior approval)
+    /// @param account The address to burn tokens from
+    /// @param amount The number of tokens to burn (18 decimals)
     function burnFrom(address account, uint256 amount) external onlyOwner {
         _spendAllowance(account, msg.sender, amount);
         _burn(account, amount);

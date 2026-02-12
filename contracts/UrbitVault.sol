@@ -26,14 +26,25 @@ contract UrbitVault is ReentrancyGuard {
     /// @notice Tracks which stars have been deposited
     mapping(uint32 => bool) public depositedStars;
 
+    /// @notice Emitted when a star is deposited into the vault
+    /// @param starId The Azimuth point ID of the deposited star
+    /// @param depositor The address that deposited the star
     event StarDeposited(uint32 indexed starId, address indexed depositor);
 
+    /// @notice Emitted when a star is redeemed from the vault
+    /// @param starId The Azimuth point ID of the redeemed star
+    /// @param redeemer The address that redeemed the star
     event StarRedeemed(uint32 indexed starId, address indexed redeemer);
 
+    /// @notice Thrown when the provided point ID is not a star (256–65535)
     error InvalidAzimuthPoint();
+    /// @notice Thrown when the star has been linked or has a spawn proxy set
     error StarNotVirgin();
+    /// @notice Thrown when the star is already held by this vault
     error StarAlreadyDeposited();
+    /// @notice Thrown when the star is not currently deposited in this vault
     error StarNotDeposited();
+    /// @notice Thrown when the caller lacks sufficient URBIT or USTAR tokens
     error InsufficientTokens();
 
     /**
@@ -185,6 +196,8 @@ contract UrbitVault is ReentrancyGuard {
 
     /**
      * @dev Internal function to check if a star is virgin
+     * @param _starId The Azimuth point ID to check
+     * @return True if the star has never been linked and has no spawn proxy
      */
     function _isVirginStar(uint32 _starId) internal view returns (bool) {
         if (azimuth.hasBeenLinked(_starId)) {
@@ -201,7 +214,9 @@ contract UrbitVault is ReentrancyGuard {
     }
 
     /**
-     * @notice External function to check if a star is eligible for deposit
+     * @notice Check if a star is eligible for deposit (virgin check)
+     * @param _starId The Azimuth point ID to check
+     * @return True if the star is virgin and eligible for deposit
      */
     function isEligibleStar(uint32 _starId) external view returns (bool) {
         return _isVirginStar(_starId);

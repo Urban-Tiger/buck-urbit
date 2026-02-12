@@ -98,11 +98,10 @@ The main contract that handles:
 - Validation of virgin stars (checks both networking keys and spawn proxy)
 - Accepting star deposits and minting tokens
 - Burning tokens and redeeming stars
-- ERC721 receiver for safe star transfers
 
 The vault is ownerless and immutable — no admin functions exist. Once deployed, it operates as a trustless protocol.
 
-Inherits: `IERC721Receiver`, `ReentrancyGuard`
+Inherits: `ReentrancyGuard`
 
 ### Token System
 
