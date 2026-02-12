@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
@@ -15,8 +15,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract UrbitToken is ERC20, ERC20Permit, Ownable {
     /// @notice Initialize the UrbitToken contract
     constructor()
-        ERC20("URBIT", "URBIT")
-        ERC20Permit("URBIT")
+        ERC20("Urbit Token", "URBIT")
+        ERC20Permit("Urbit Token")
         Ownable(msg.sender)
     {}
 

@@ -22,7 +22,6 @@ This system allows users to:
 
 - **IAzimuth.sol** - Interface for the Azimuth point registry
 - **IEcliptic.sol** - Interface for the Ecliptic contract (Azimuth's ERC721 logic)
-- **ITreasuryProxy.sol** - Interface for the Treasury proxy
 
 ### Mocks (Testing)
 
@@ -101,7 +100,9 @@ The main contract that handles:
 - Burning tokens and redeeming stars
 - ERC721 receiver for safe star transfers
 
-Inherits: `IERC721Receiver`, `Ownable`, `ReentrancyGuard`, `Pausable`
+The vault is ownerless and immutable — no admin functions exist. Once deployed, it operates as a trustless protocol.
+
+Inherits: `IERC721Receiver`, `ReentrancyGuard`
 
 ### Token System
 
@@ -155,12 +156,6 @@ function isEligibleStar(uint32 _starId) external view returns (bool)
 
 - Returns whether a star is eligible for deposit (virgin check)
 
-### For Admins
-
-**Emergency Functions:**
-
-- `pause()` / `unpause()` - Halt or resume vault operations (owner only)
-
 ## Contract Addresses
 
 ### Mainnet (Azimuth)
@@ -170,9 +165,9 @@ function isEligibleStar(uint32 _starId) external view returns (bool)
 
 ### Sepolia Testnet
 
-- **UrbitToken**: `0x3C615fF007Fd1CF11862BAb5220dbe822E023F29`
-- **UstarToken**: `0xDFBad2CAe32d0E609a01F1ba32e07a12E9EBf967`
-- **UrbitVault**: `0x7a766d69beDf94B1b8924Df916c414f3930451Af`
+- **UrbitToken**: `0x4d1c98b2eBCcd4C06A86f9B242577eB124f8db56`
+- **UstarToken**: `0x8B9114da545CaeBe36d4299E6F3FdcD8EcB76ac0`
+- **UrbitVault**: `0x12a769570A3296c8aaC05eBC96B397547D9cF63A`
 - Azimuth: `0xE6532b92148615418c1b4150dA4caC122b1C7F1a`
 - Ecliptic: `0xf49C4d09C0b98Fb2d199820eC99D22d39174D1A3`
 
@@ -183,7 +178,7 @@ The test suite covers:
 - Star deposit functionality
 - Token redemption
 - Virgin star validation
-- Access control
+- Permit-based redemption
 - Edge cases and error conditions
 
 ## License

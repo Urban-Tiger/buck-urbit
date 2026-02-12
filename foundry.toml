@@ -5,14 +5,14 @@ test = "test/foundry"
 libs = ["node_modules", "lib"]
 cache_path = "cache/foundry"
 auto_detect_solc = false
-solc_version = "0.8.20"
+solc_version = "0.8.28"
 evm_version = "paris"
 optimizer = true
 optimizer_runs = 1
 via_ir = true
 dotenv = ".env"
 script = "script"
-skip = ["contracts/azimuth/**", "contracts/interfaces/ITreasuryProxy.sol"]
+skip = ["contracts/azimuth/**"]
 
 remappings = [
     "@openzeppelin/=node_modules/@openzeppelin/",

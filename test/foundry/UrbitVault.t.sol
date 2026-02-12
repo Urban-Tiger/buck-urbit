@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
 import "../../contracts/UrbitVault.sol";
@@ -18,7 +18,6 @@ contract UrbitVaultTest is Test {
     MockAzimuth public azimuth;
     MockEcliptic public ecliptic;
 
-    address public owner;
     address public user1;
     uint256 public user1Key;
     address public user2;
@@ -37,7 +36,6 @@ contract UrbitVaultTest is Test {
     // ═══════════════════════════════════════════════════════════════════
 
     function setUp() public {
-        owner = address(this);
         (user1, user1Key) = makeAddrAndKey("user1");
         user2 = makeAddr("user2");
 
@@ -134,10 +132,6 @@ contract UrbitVaultTest is Test {
     // ═══════════════════════════════════════════════════════════════════
     //                          DEPLOYMENT
     // ═══════════════════════════════════════════════════════════════════
-
-    function test_deployment_owner() public view {
-        assertEq(vault.owner(), owner);
-    }
 
     function test_deployment_addresses() public view {
         assertEq(address(vault.azimuth()), address(azimuth));
@@ -346,12 +340,12 @@ contract UrbitVaultTest is Test {
         uint256 deadline = block.timestamp + 1 hours;
 
         (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "URBIT", user1, user1Key, address(vault),
+            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
             URBIT_AMOUNT, 0, deadline
         );
 
         (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "USTAR", user1, user1Key, address(vault),
+            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
             USTAR_AMOUNT, 0, deadline
         );
 
@@ -374,12 +368,12 @@ contract UrbitVaultTest is Test {
         uint256 deadline = block.timestamp + 1 hours;
 
         (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "URBIT", user1, user1Key, address(vault),
+            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
             URBIT_AMOUNT, 0, deadline
         );
 
         (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "USTAR", user1, user1Key, address(vault),
+            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
             USTAR_AMOUNT, 0, deadline
         );
 
@@ -400,12 +394,12 @@ contract UrbitVaultTest is Test {
         uint256 deadline = block.timestamp - 1;
 
         (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "URBIT", user1, user1Key, address(vault),
+            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
             URBIT_AMOUNT, 0, deadline
         );
 
         (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "USTAR", user1, user1Key, address(vault),
+            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
             USTAR_AMOUNT, 0, deadline
         );
 
@@ -416,91 +410,6 @@ contract UrbitVaultTest is Test {
             deadline, urbitV, urbitR, urbitS,
             deadline, ustarV, ustarR, ustarS
         );
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //                         ADMIN / PAUSE
-    // ═══════════════════════════════════════════════════════════════════
-
-    function test_pause() public {
-        vault.pause();
-        assertTrue(vault.paused());
-    }
-
-    function test_unpause() public {
-        vault.pause();
-        vault.unpause();
-        assertFalse(vault.paused());
-    }
-
-    function test_pause_blocksDeposit() public {
-        vault.pause();
-
-        vm.startPrank(user1);
-        ecliptic.approve(address(vault), STAR_ID);
-
-        vm.expectRevert(Pausable.EnforcedPause.selector);
-        vault.depositStar(STAR_ID);
-        vm.stopPrank();
-    }
-
-    function test_pause_blocksRedeem() public {
-        _depositStar(STAR_ID, user1);
-        _approveTokensForRedeem(user1);
-
-        vault.pause();
-
-        vm.prank(user1);
-        vm.expectRevert(Pausable.EnforcedPause.selector);
-        vault.redeemStar(STAR_ID);
-    }
-
-    function test_pause_blocksRedeemWithPermit() public {
-        _depositStar(STAR_ID, user1);
-
-        vault.pause();
-
-        uint256 deadline = block.timestamp + 1 hours;
-
-        (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "URBIT", user1, user1Key, address(vault),
-            URBIT_AMOUNT, 0, deadline
-        );
-
-        (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "USTAR", user1, user1Key, address(vault),
-            USTAR_AMOUNT, 0, deadline
-        );
-
-        vm.prank(user1);
-        vm.expectRevert(Pausable.EnforcedPause.selector);
-        vault.redeemStarWithPermit(
-            STAR_ID,
-            deadline, urbitV, urbitR, urbitS,
-            deadline, ustarV, ustarR, ustarS
-        );
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //                        ACCESS CONTROL
-    // ═══════════════════════════════════════════════════════════════════
-
-    function test_pause_reverts_nonOwner() public {
-        vm.prank(user1);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user1)
-        );
-        vault.pause();
-    }
-
-    function test_unpause_reverts_nonOwner() public {
-        vault.pause();
-
-        vm.prank(user1);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user1)
-        );
-        vault.unpause();
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -552,8 +461,4 @@ contract UrbitVaultTest is Test {
         assertEq(ustarToken.balanceOf(user1), USTAR_AMOUNT);
     }
 
-    function test_onERC721Received() public view {
-        bytes4 selector = vault.onERC721Received(address(0), address(0), 0, "");
-        assertEq(selector, IERC721Receiver.onERC721Received.selector);
-    }
 }

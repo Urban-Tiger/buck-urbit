@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
@@ -15,8 +15,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract UstarToken is ERC20, ERC20Permit, Ownable {
     /// @notice Initialize the UstarToken contract
     constructor()
-        ERC20("USTAR", "USTAR")
-        ERC20Permit("USTAR")
+        ERC20("Urbit Star Token", "USTAR")
+        ERC20Permit("Urbit Star Token")
         Ownable(msg.sender)
     {}
 

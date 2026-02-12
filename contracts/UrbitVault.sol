@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./interfaces/IAzimuth.sol";
 import "./interfaces/IEcliptic.sol";
 import "./UrbitToken.sol";
@@ -14,11 +11,11 @@ import "./UstarToken.sol";
  * @title UrbitVault
  * @notice Deposit virgin Urbit stars to receive 65,535 $URBIT + 1 $USTAR tokens.
  *         Deposited stars may be redeemed by burning the tokens.
- *         This contract is intended to be the owner of the UrbitToken and UstarToken contracts.
+ *         This contract is ownerless and immutable — no admin functions exist.
 
  * @author Urbit Foundation
  */
-contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
+contract UrbitVault is ReentrancyGuard {
     IAzimuth public immutable azimuth;
     UrbitToken public immutable urbitToken;
     UstarToken public immutable ustarToken;
@@ -38,7 +35,6 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
     error StarAlreadyDeposited();
     error StarNotDeposited();
     error InsufficientTokens();
-    error TransferFailed();
 
     /**
      * @notice Initialize the UrbitVault contract
@@ -50,7 +46,10 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         address _azimuth,
         address _urbitToken,
         address _ustarToken
-    ) Ownable(msg.sender) {
+    ) {
+        require(_azimuth != address(0), "Zero azimuth address");
+        require(_urbitToken != address(0), "Zero urbitToken address");
+        require(_ustarToken != address(0), "Zero ustarToken address");
         azimuth = IAzimuth(_azimuth);
         urbitToken = UrbitToken(_urbitToken);
         ustarToken = UstarToken(_ustarToken);
@@ -60,7 +59,7 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
      * @notice Deposit a virgin star and receive 65,535 $URBIT + 1 $USTAR tokens
      * @param _starId The ID of the star to deposit
      */
-    function depositStar(uint32 _starId) external nonReentrant whenNotPaused {
+    function depositStar(uint32 _starId) external nonReentrant {
         if (azimuth.getPointSize(_starId) != uint8(IAzimuth.Size.Star)) {
             revert InvalidAzimuthPoint();
         }
@@ -70,13 +69,15 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         }
 
         if (depositedStars[_starId]) {
-            revert StarAlreadyDeposited(); // for security
+            revert StarAlreadyDeposited();
         }
 
+        // Effects
+        depositedStars[_starId] = true;
+
+        // Interactions
         IEcliptic ecliptic = IEcliptic(azimuth.owner());
         ecliptic.transferFrom(msg.sender, address(this), _starId);
-
-        depositedStars[_starId] = true;
 
         urbitToken.mint(msg.sender, PLANETS_PER_STAR * 10**18);
         ustarToken.mint(msg.sender, 1 * 10**18);
@@ -88,7 +89,7 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
      * @notice Redeem a star by burning 65,535 $URBIT + 1 $USTAR tokens
      * @param _starId The ID of the star to redeem
      */
-    function redeemStar(uint32 _starId) external nonReentrant whenNotPaused {
+    function redeemStar(uint32 _starId) external nonReentrant {
         if (!depositedStars[_starId]) {
             revert StarNotDeposited();
         }
@@ -101,10 +102,12 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
             revert InsufficientTokens();
         }
 
+        // Effects
+        depositedStars[_starId] = false;
+
+        // Interactions
         urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR * 10**18);
         ustarToken.burnFrom(msg.sender, 1 * 10**18);
-
-        depositedStars[_starId] = false;
 
         IEcliptic ecliptic = IEcliptic(azimuth.owner());
         ecliptic.transferFrom(address(this), msg.sender, _starId);
@@ -134,7 +137,7 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         uint8 _ustarV,
         bytes32 _ustarR,
         bytes32 _ustarS
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant {
         if (!depositedStars[_starId]) {
             revert StarNotDeposited();
         }
@@ -147,7 +150,10 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
             revert InsufficientTokens();
         }
 
-        // Use permit to approve tokens without separate transactions
+        // Effects
+        depositedStars[_starId] = false;
+
+        // Interactions
         urbitToken.permit(
             msg.sender,
             address(this),
@@ -170,8 +176,6 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
 
         urbitToken.burnFrom(msg.sender, PLANETS_PER_STAR * 10**18);
         ustarToken.burnFrom(msg.sender, 1 * 10**18);
-
-        depositedStars[_starId] = false;
 
         IEcliptic ecliptic = IEcliptic(azimuth.owner());
         ecliptic.transferFrom(address(this), msg.sender, _starId);
@@ -203,22 +207,4 @@ contract UrbitVault is IERC721Receiver, Ownable, ReentrancyGuard, Pausable {
         return _isVirginStar(_starId);
     }
 
-    function onERC721Received(
-        address, // operator
-        address, // from
-        uint256, // tokenId
-        bytes calldata // data
-    ) external pure override returns (bytes4) {
-        return IERC721Receiver.onERC721Received.selector;
-    }
-
-    /// @notice Pause the contract in case of emergency
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /// @notice Unpause the contract
-    function unpause() external onlyOwner {
-        _unpause();
-    }
 }

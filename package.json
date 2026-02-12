@@ -4,8 +4,8 @@
   "scripts": {
     "test": "forge test -vvv",
     "build": "forge build",
-    "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url $SEPOLIA_URL --broadcast --verify",
-    "deploy:mainnet": "forge script script/Deploy.s.sol --rpc-url $MAINNET_URL --broadcast --verify",
+    "deploy:sepolia": "AZIMUTH_ADDRESS=$SEPOLIA_AZIMUTH forge script script/Deploy.s.sol --rpc-url $SEPOLIA_URL --broadcast --verify",
+    "deploy:mainnet": "AZIMUTH_ADDRESS=$MAINNET_AZIMUTH forge script script/Deploy.s.sol --rpc-url $MAINNET_URL --broadcast --verify",
     "deploy:local": "forge script script/DeployLocal.s.sol --rpc-url http://localhost:8545 --broadcast",
     "node": "anvil"
   },
