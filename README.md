@@ -185,4 +185,4 @@ Static analysis via Slither passes with no findings above informational.
 
 ## License
 
-ISC License
+MIT License

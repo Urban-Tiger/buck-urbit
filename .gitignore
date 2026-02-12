@@ -20,3 +20,9 @@ deployments/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/
+
+# Empty dirs
+docs/
