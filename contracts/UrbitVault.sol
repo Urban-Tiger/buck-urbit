@@ -46,6 +46,8 @@ contract UrbitVault is ReentrancyGuard {
     error StarNotDeposited();
     /// @notice Thrown when the caller lacks sufficient URBIT or USTAR tokens
     error InsufficientTokens();
+    /// @notice Thrown when an empty array is provided
+    error EmptyArray();
 
     /**
      * @notice Initialize the UrbitVault contract
@@ -69,8 +71,39 @@ contract UrbitVault is ReentrancyGuard {
     /**
      * @notice Deposit a virgin star and receive 65,535 $URBIT + 1 $USTAR tokens
      * @param _starId The ID of the star to deposit
+     * @param _recipient The address to receive the minted tokens
      */
-    function depositStar(uint32 _starId) external nonReentrant {
+    function depositStar(uint32 _starId, address _recipient) external nonReentrant {
+        IEcliptic ecliptic = IEcliptic(azimuth.owner());
+        _depositStar(_starId, ecliptic);
+        urbitToken.mint(_recipient, PLANETS_PER_STAR * 10**18);
+        ustarToken.mint(_recipient, 1 * 10**18);
+    }
+
+    /**
+     * @notice Deposit multiple virgin stars in a single transaction
+     * @param _starIds Array of star IDs to deposit
+     * @param _recipient The address to receive the minted tokens
+     */
+    function depositMultipleStars(uint32[] calldata _starIds, address _recipient) external nonReentrant {
+        uint256 count = _starIds.length;
+        if (count == 0) revert EmptyArray();
+
+        IEcliptic ecliptic = IEcliptic(azimuth.owner());
+        for (uint256 i = 0; i < count; i++) {
+            _depositStar(_starIds[i], ecliptic);
+        }
+
+        urbitToken.mint(_recipient, count * PLANETS_PER_STAR * 10**18);
+        ustarToken.mint(_recipient, count * 1 * 10**18);
+    }
+
+    /**
+     * @dev Validate and deposit a single star into the vault
+     * @param _starId The star to deposit
+     * @param _ecliptic Cached Ecliptic reference
+     */
+    function _depositStar(uint32 _starId, IEcliptic _ecliptic) internal {
         if (azimuth.getPointSize(_starId) != uint8(IAzimuth.Size.Star)) {
             revert InvalidAzimuthPoint();
         }
@@ -83,15 +116,8 @@ contract UrbitVault is ReentrancyGuard {
             revert StarAlreadyDeposited();
         }
 
-        // Effects
         depositedStars[_starId] = true;
-
-        // Interactions
-        IEcliptic ecliptic = IEcliptic(azimuth.owner());
-        ecliptic.transferFrom(msg.sender, address(this), _starId);
-
-        urbitToken.mint(msg.sender, PLANETS_PER_STAR * 10**18);
-        ustarToken.mint(msg.sender, 1 * 10**18);
+        _ecliptic.transferFrom(msg.sender, address(this), _starId);
 
         emit StarDeposited(_starId, msg.sender);
     }

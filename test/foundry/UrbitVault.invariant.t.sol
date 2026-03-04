@@ -61,7 +61,7 @@ contract VaultHandler is Test {
 
         vm.startPrank(actor);
         ecliptic.approve(address(vault), starId);
-        vault.depositStar(starId);
+        vault.depositStar(starId, actor);
         vm.stopPrank();
 
         depositedStars.push(starId);

@@ -80,7 +80,7 @@ contract UrbitVaultTest is Test {
     function _depositStar(uint32 starId, address depositor) internal {
         vm.startPrank(depositor);
         ecliptic.approve(address(vault), starId);
-        vault.depositStar(starId);
+        vault.depositStar(starId, depositor);
         vm.stopPrank();
     }
 
@@ -168,7 +168,7 @@ contract UrbitVaultTest is Test {
     function test_depositStar_happy() public {
         vm.startPrank(user1);
         ecliptic.approve(address(vault), STAR_ID);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
 
         assertTrue(vault.depositedStars(STAR_ID));
@@ -195,7 +195,7 @@ contract UrbitVaultTest is Test {
 
         vm.expectEmit(true, true, false, true);
         emit StarDeposited(STAR_ID, user1);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
     }
 
@@ -207,7 +207,7 @@ contract UrbitVaultTest is Test {
         ecliptic.approve(address(vault), GALAXY_ID);
 
         vm.expectRevert(UrbitVault.InvalidAzimuthPoint.selector);
-        vault.depositStar(GALAXY_ID);
+        vault.depositStar(GALAXY_ID, user1);
         vm.stopPrank();
     }
 
@@ -219,7 +219,7 @@ contract UrbitVaultTest is Test {
         ecliptic.approve(address(vault), PLANET_ID);
 
         vm.expectRevert(UrbitVault.InvalidAzimuthPoint.selector);
-        vault.depositStar(PLANET_ID);
+        vault.depositStar(PLANET_ID, user1);
         vm.stopPrank();
     }
 
@@ -230,7 +230,7 @@ contract UrbitVaultTest is Test {
         ecliptic.approve(address(vault), STAR_ID);
 
         vm.expectRevert(UrbitVault.StarNotVirgin.selector);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
     }
 
@@ -241,7 +241,7 @@ contract UrbitVaultTest is Test {
         ecliptic.approve(address(vault), STAR_ID);
 
         vm.expectRevert(UrbitVault.StarNotVirgin.selector);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
     }
 
@@ -250,7 +250,7 @@ contract UrbitVaultTest is Test {
 
         vm.startPrank(user1);
         vm.expectRevert(UrbitVault.StarAlreadyDeposited.selector);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
     }
 
@@ -430,7 +430,7 @@ contract UrbitVaultTest is Test {
         // Re-deposit
         vm.startPrank(user1);
         ecliptic.approve(address(vault), STAR_ID);
-        vault.depositStar(STAR_ID);
+        vault.depositStar(STAR_ID, user1);
         vm.stopPrank();
         assertTrue(vault.depositedStars(STAR_ID));
     }

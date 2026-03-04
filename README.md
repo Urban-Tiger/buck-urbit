@@ -117,12 +117,21 @@ Both tokens support ERC20Permit (EIP-2612) for gasless approvals. Minting and bu
 **Deposit Star:**
 
 ```solidity
-function depositStar(uint32 _starId) external
+function depositStar(uint32 _starId, address _recipient) external
 ```
 
-- Transfers a star to the vault and mints tokens to the depositor
+- Transfers a star to the vault and mints tokens to `_recipient`
 - Requires the star to be virgin (no networking keys set, no spawn proxy)
 - Mints 65,535 URBIT and 1 USTAR tokens
+
+**Deposit Multiple Stars:**
+
+```solidity
+function depositMultipleStars(uint32[] calldata _starIds, address _recipient) external
+```
+
+- Deposits multiple stars in a single transaction
+- More gas-efficient than individual deposits (single token mint call)
 
 **Redeem Star:**
 
