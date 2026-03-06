@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.34;
 
 import "forge-std/Script.sol";
 import "../contracts/UrbitToken.sol";
@@ -35,7 +35,8 @@ contract DeployLocal is Script {
         UrbitVault vault = new UrbitVault(
             address(azimuth),
             address(urbitToken),
-            address(ustarToken)
+            address(ustarToken),
+            false
         );
 
         urbitToken.transferOwnership(address(vault));

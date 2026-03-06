@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.34;
 
 import "forge-std/Test.sol";
 import "../../contracts/UrbitVault.sol";
@@ -77,8 +77,6 @@ contract VaultHandler is Test {
         if (!vault.depositedStars(starId)) return;
 
         vm.startPrank(actor);
-        urbitToken.approve(address(vault), 65535 * 1e18);
-        ustarToken.approve(address(vault), 1e18);
         vault.redeemStar(starId);
         vm.stopPrank();
 
@@ -112,7 +110,8 @@ contract UrbitVaultInvariantTest is Test {
         vault = new UrbitVault(
             address(azimuth),
             address(urbitToken),
-            address(ustarToken)
+            address(ustarToken),
+            false
         );
 
         urbitToken.transferOwnership(address(vault));

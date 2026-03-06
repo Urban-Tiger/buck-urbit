@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.34;
 
 import "forge-std/Test.sol";
 import "../../contracts/UrbitVault.sol";
@@ -19,7 +19,6 @@ contract UrbitVaultTest is Test {
     MockEcliptic public ecliptic;
 
     address public user1;
-    uint256 public user1Key;
     address public user2;
 
     uint32 constant STAR_ID = 256;
@@ -36,7 +35,7 @@ contract UrbitVaultTest is Test {
     // ═══════════════════════════════════════════════════════════════════
 
     function setUp() public {
-        (user1, user1Key) = makeAddrAndKey("user1");
+        user1 = makeAddr("user1");
         user2 = makeAddr("user2");
 
         // Deploy mocks
@@ -50,11 +49,12 @@ contract UrbitVaultTest is Test {
         // Point azimuth at ecliptic
         azimuth.setContractOwner(address(ecliptic));
 
-        // Deploy vault
+        // Deploy vault (whitelist disabled by default for existing tests)
         vault = new UrbitVault(
             address(azimuth),
             address(urbitToken),
-            address(ustarToken)
+            address(ustarToken),
+            false
         );
 
         // Transfer token ownership to vault
@@ -82,51 +82,6 @@ contract UrbitVaultTest is Test {
         ecliptic.approve(address(vault), starId);
         vault.depositStar(starId, depositor);
         vm.stopPrank();
-    }
-
-    function _approveTokensForRedeem(address redeemer) internal {
-        vm.startPrank(redeemer);
-        urbitToken.approve(address(vault), URBIT_AMOUNT);
-        ustarToken.approve(address(vault), USTAR_AMOUNT);
-        vm.stopPrank();
-    }
-
-    function _signPermit(
-        address token,
-        string memory name,
-        address signer,
-        uint256 signerKey,
-        address spender,
-        uint256 value,
-        uint256 nonce,
-        uint256 deadline
-    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes(name)),
-                keccak256(bytes("1")),
-                block.chainid,
-                token
-            )
-        );
-
-        bytes32 structHash = keccak256(
-            abi.encode(
-                keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
-                signer,
-                spender,
-                value,
-                nonce,
-                deadline
-            )
-        );
-
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", domainSeparator, structHash)
-        );
-
-        (v, r, s) = vm.sign(signerKey, digest);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -260,7 +215,7 @@ contract UrbitVaultTest is Test {
 
     function test_redeemStar_happy() public {
         _depositStar(STAR_ID, user1);
-        _approveTokensForRedeem(user1);
+
 
         vm.prank(user1);
         vault.redeemStar(STAR_ID);
@@ -270,7 +225,7 @@ contract UrbitVaultTest is Test {
 
     function test_redeemStar_burnsTokens() public {
         _depositStar(STAR_ID, user1);
-        _approveTokensForRedeem(user1);
+
 
         vm.prank(user1);
         vault.redeemStar(STAR_ID);
@@ -281,7 +236,7 @@ contract UrbitVaultTest is Test {
 
     function test_redeemStar_transfersStar() public {
         _depositStar(STAR_ID, user1);
-        _approveTokensForRedeem(user1);
+
 
         vm.prank(user1);
         vault.redeemStar(STAR_ID);
@@ -291,7 +246,7 @@ contract UrbitVaultTest is Test {
 
     function test_redeemStar_emitsEvent() public {
         _depositStar(STAR_ID, user1);
-        _approveTokensForRedeem(user1);
+
 
         vm.expectEmit(true, true, false, true);
         emit StarRedeemed(STAR_ID, user1);
@@ -331,88 +286,6 @@ contract UrbitVaultTest is Test {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //                    REDEMPTION WITH PERMIT
-    // ═══════════════════════════════════════════════════════════════════
-
-    function test_redeemStarWithPermit_happy() public {
-        _depositStar(STAR_ID, user1);
-
-        uint256 deadline = block.timestamp + 1 hours;
-
-        (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
-            URBIT_AMOUNT, 0, deadline
-        );
-
-        (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
-            USTAR_AMOUNT, 0, deadline
-        );
-
-        vm.prank(user1);
-        vault.redeemStarWithPermit(
-            STAR_ID,
-            deadline, urbitV, urbitR, urbitS,
-            deadline, ustarV, ustarR, ustarS
-        );
-
-        assertFalse(vault.depositedStars(STAR_ID));
-        assertEq(ecliptic.ownerOf(STAR_ID), user1);
-        assertEq(urbitToken.balanceOf(user1), 0);
-        assertEq(ustarToken.balanceOf(user1), 0);
-    }
-
-    function test_redeemStarWithPermit_emitsEvent() public {
-        _depositStar(STAR_ID, user1);
-
-        uint256 deadline = block.timestamp + 1 hours;
-
-        (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
-            URBIT_AMOUNT, 0, deadline
-        );
-
-        (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
-            USTAR_AMOUNT, 0, deadline
-        );
-
-        vm.expectEmit(true, true, false, true);
-        emit StarRedeemed(STAR_ID, user1);
-
-        vm.prank(user1);
-        vault.redeemStarWithPermit(
-            STAR_ID,
-            deadline, urbitV, urbitR, urbitS,
-            deadline, ustarV, ustarR, ustarS
-        );
-    }
-
-    function test_redeemStarWithPermit_reverts_expiredDeadline() public {
-        _depositStar(STAR_ID, user1);
-
-        uint256 deadline = block.timestamp - 1;
-
-        (uint8 urbitV, bytes32 urbitR, bytes32 urbitS) = _signPermit(
-            address(urbitToken), "Urbit Token", user1, user1Key, address(vault),
-            URBIT_AMOUNT, 0, deadline
-        );
-
-        (uint8 ustarV, bytes32 ustarR, bytes32 ustarS) = _signPermit(
-            address(ustarToken), "Urbit Star Token", user1, user1Key, address(vault),
-            USTAR_AMOUNT, 0, deadline
-        );
-
-        vm.prank(user1);
-        vm.expectRevert();
-        vault.redeemStarWithPermit(
-            STAR_ID,
-            deadline, urbitV, urbitR, urbitS,
-            deadline, ustarV, ustarR, ustarS
-        );
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
     //                          EDGE CASES
     // ═══════════════════════════════════════════════════════════════════
 
@@ -422,7 +295,7 @@ contract UrbitVaultTest is Test {
         assertTrue(vault.depositedStars(STAR_ID));
 
         // Redeem
-        _approveTokensForRedeem(user1);
+
         vm.prank(user1);
         vault.redeemStar(STAR_ID);
         assertFalse(vault.depositedStars(STAR_ID));
@@ -451,7 +324,7 @@ contract UrbitVaultTest is Test {
         _depositStar(STAR_ID_2, user1);
 
         // Redeem only the first
-        _approveTokensForRedeem(user1);
+
         vm.prank(user1);
         vault.redeemStar(STAR_ID);
 
@@ -459,6 +332,357 @@ contract UrbitVaultTest is Test {
         assertTrue(vault.depositedStars(STAR_ID_2));
         assertEq(urbitToken.balanceOf(user1), URBIT_AMOUNT);
         assertEq(ustarToken.balanceOf(user1), USTAR_AMOUNT);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                          WHITELIST
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_whitelist_disabledByDefault() public view {
+        assertFalse(vault.whitelistEnabled());
+    }
+
+    function test_whitelist_depositWorksWhenDisabled() public {
+        // Whitelist is off — anyone can deposit
+        _depositStar(STAR_ID, user1);
+        assertTrue(vault.depositedStars(STAR_ID));
+    }
+
+    function _deployWhitelistedVault() internal returns (UrbitVault wlVault) {
+        UrbitToken wlUrbit = new UrbitToken();
+        UstarToken wlUstar = new UstarToken();
+        wlVault = new UrbitVault(
+            address(azimuth), address(wlUrbit), address(wlUstar), true
+        );
+        wlUrbit.transferOwnership(address(wlVault));
+        wlUstar.transferOwnership(address(wlVault));
+    }
+
+    function test_whitelist_blocksNonWhitelisted() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        vm.startPrank(user1);
+        ecliptic.approve(address(wlVault), STAR_ID);
+        vm.expectRevert(UrbitVault.NotWhitelisted.selector);
+        wlVault.depositStar(STAR_ID, user1);
+        vm.stopPrank();
+    }
+
+    function test_whitelist_allowsWhitelisted() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = user1;
+        wlVault.setWhitelist(accounts, true);
+
+        vm.startPrank(user1);
+        ecliptic.approve(address(wlVault), STAR_ID);
+        wlVault.depositStar(STAR_ID, user1);
+        vm.stopPrank();
+
+        assertTrue(wlVault.depositedStars(STAR_ID));
+    }
+
+    function test_whitelist_toggle() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        assertTrue(wlVault.whitelistEnabled());
+        wlVault.setWhitelistEnabled(false);
+        assertFalse(wlVault.whitelistEnabled());
+
+        // Can re-enable
+        wlVault.setWhitelistEnabled(true);
+        assertTrue(wlVault.whitelistEnabled());
+    }
+
+    function test_whitelist_permanentViaRenounce() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        // Disable whitelist and renounce — now it's permanent
+        wlVault.setWhitelistEnabled(false);
+        wlVault.renounceOwnership();
+
+        // Nobody can re-enable
+        vm.expectRevert();
+        wlVault.setWhitelistEnabled(true);
+    }
+
+    function test_whitelist_renounce_reverts_whileEnabled() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        vm.expectRevert(UrbitVault.WhitelistStillEnabled.selector);
+        wlVault.renounceOwnership();
+    }
+
+    function test_whitelist_disableOpensDeposits() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        // user1 can't deposit yet
+        vm.startPrank(user1);
+        ecliptic.approve(address(wlVault), STAR_ID);
+        vm.expectRevert(UrbitVault.NotWhitelisted.selector);
+        wlVault.depositStar(STAR_ID, user1);
+        vm.stopPrank();
+
+        // Disable whitelist
+        wlVault.setWhitelistEnabled(false);
+
+        // Now user1 can deposit
+        vm.startPrank(user1);
+        wlVault.depositStar(STAR_ID, user1);
+        vm.stopPrank();
+
+        assertTrue(wlVault.depositedStars(STAR_ID));
+    }
+
+    function test_whitelist_setWhitelist_onlyOwner() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = user1;
+
+        vm.prank(user1);
+        vm.expectRevert();
+        vault.setWhitelist(accounts, true);
+    }
+
+    function test_whitelist_setWhitelistEnabled_onlyOwner() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        vm.prank(user1);
+        vm.expectRevert();
+        wlVault.setWhitelistEnabled(false);
+    }
+
+    function test_whitelist_removeFromWhitelist() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = user1;
+        wlVault.setWhitelist(accounts, true);
+        assertTrue(wlVault.whitelisted(user1));
+
+        wlVault.setWhitelist(accounts, false);
+        assertFalse(wlVault.whitelisted(user1));
+
+        vm.startPrank(user1);
+        ecliptic.approve(address(wlVault), STAR_ID);
+        vm.expectRevert(UrbitVault.NotWhitelisted.selector);
+        wlVault.depositStar(STAR_ID, user1);
+        vm.stopPrank();
+    }
+
+    function test_whitelist_multipleStars_blocked() public {
+        UrbitVault wlVault = _deployWhitelistedVault();
+
+        uint32[] memory starIds = new uint32[](2);
+        starIds[0] = STAR_ID;
+        starIds[1] = STAR_ID_2;
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.NotWhitelisted.selector);
+        wlVault.depositMultipleStars(starIds, user1);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                      BATCH DEPOSIT
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_depositMultipleStars_happy() public {
+        uint32[] memory starIds = new uint32[](3);
+        starIds[0] = STAR_ID;
+        starIds[1] = STAR_ID_2;
+        starIds[2] = STAR_ID_3;
+
+        vm.startPrank(user1);
+        ecliptic.approve(address(vault), STAR_ID);
+        ecliptic.approve(address(vault), STAR_ID_2);
+        ecliptic.approve(address(vault), STAR_ID_3);
+        vault.depositMultipleStars(starIds, user1);
+        vm.stopPrank();
+
+        assertTrue(vault.depositedStars(STAR_ID));
+        assertTrue(vault.depositedStars(STAR_ID_2));
+        assertTrue(vault.depositedStars(STAR_ID_3));
+        assertEq(urbitToken.balanceOf(user1), URBIT_AMOUNT * 3);
+        assertEq(ustarToken.balanceOf(user1), USTAR_AMOUNT * 3);
+        assertEq(ecliptic.ownerOf(STAR_ID), address(vault));
+        assertEq(ecliptic.ownerOf(STAR_ID_2), address(vault));
+        assertEq(ecliptic.ownerOf(STAR_ID_3), address(vault));
+    }
+
+    function test_depositMultipleStars_reverts_emptyArray() public {
+        uint32[] memory starIds = new uint32[](0);
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.EmptyArray.selector);
+        vault.depositMultipleStars(starIds, user1);
+    }
+
+    function test_depositMultipleStars_reverts_exceedsMaxBatchSize() public {
+        uint32[] memory starIds = new uint32[](101);
+        for (uint32 i = 0; i < 101; i++) {
+            starIds[i] = 256 + (i * 256);
+        }
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.ExceedsMaxBatchSize.selector);
+        vault.depositMultipleStars(starIds, user1);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                      BATCH REDEMPTION
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_redeemMultipleStars_happy() public {
+        _depositStar(STAR_ID, user1);
+        _depositStar(STAR_ID_2, user1);
+        _depositStar(STAR_ID_3, user1);
+
+        uint32[] memory starIds = new uint32[](3);
+        starIds[0] = STAR_ID;
+        starIds[1] = STAR_ID_2;
+        starIds[2] = STAR_ID_3;
+
+        vm.prank(user1);
+        vault.redeemMultipleStars(starIds);
+
+        assertFalse(vault.depositedStars(STAR_ID));
+        assertFalse(vault.depositedStars(STAR_ID_2));
+        assertFalse(vault.depositedStars(STAR_ID_3));
+        assertEq(ecliptic.ownerOf(STAR_ID), user1);
+        assertEq(ecliptic.ownerOf(STAR_ID_2), user1);
+        assertEq(ecliptic.ownerOf(STAR_ID_3), user1);
+        assertEq(urbitToken.balanceOf(user1), 0);
+        assertEq(ustarToken.balanceOf(user1), 0);
+    }
+
+    function test_redeemMultipleStars_reverts_emptyArray() public {
+        uint32[] memory starIds = new uint32[](0);
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.EmptyArray.selector);
+        vault.redeemMultipleStars(starIds);
+    }
+
+    function test_redeemMultipleStars_reverts_exceedsMaxBatchSize() public {
+        uint32[] memory starIds = new uint32[](101);
+        for (uint32 i = 0; i < 101; i++) {
+            starIds[i] = 256 + (i * 256);
+        }
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.ExceedsMaxBatchSize.selector);
+        vault.redeemMultipleStars(starIds);
+    }
+
+    function test_redeemMultipleStars_reverts_starNotDeposited() public {
+        // Deposit two stars so user has enough tokens for a batch of 2
+        _depositStar(STAR_ID, user1);
+        _depositStar(STAR_ID_2, user1);
+
+        uint32[] memory starIds = new uint32[](2);
+        starIds[0] = STAR_ID;
+        starIds[1] = STAR_ID_3; // not deposited
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.StarNotDeposited.selector);
+        vault.redeemMultipleStars(starIds);
+    }
+
+    function test_redeemMultipleStars_reverts_duplicateStarIds() public {
+        // Deposit two stars so user has enough tokens for a batch of 2
+        _depositStar(STAR_ID, user1);
+        _depositStar(STAR_ID_2, user1);
+
+        uint32[] memory starIds = new uint32[](2);
+        starIds[0] = STAR_ID;
+        starIds[1] = STAR_ID; // duplicate — first iteration clears it, second reverts
+
+        vm.prank(user1);
+        vm.expectRevert(UrbitVault.StarNotDeposited.selector);
+        vault.redeemMultipleStars(starIds);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                      RECIPIENT ROUTING
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_depositStar_recipientReceivesTokens() public {
+        vm.startPrank(user1);
+        ecliptic.approve(address(vault), STAR_ID);
+        vault.depositStar(STAR_ID, user2);
+        vm.stopPrank();
+
+        // user2 gets the tokens, not user1
+        assertEq(urbitToken.balanceOf(user2), URBIT_AMOUNT);
+        assertEq(ustarToken.balanceOf(user2), USTAR_AMOUNT);
+        assertEq(urbitToken.balanceOf(user1), 0);
+        assertEq(ustarToken.balanceOf(user1), 0);
+
+        // Star is in the vault
+        assertEq(ecliptic.ownerOf(STAR_ID), address(vault));
+    }
+
+    function test_depositStar_reverts_zeroRecipient() public {
+        vm.startPrank(user1);
+        ecliptic.approve(address(vault), STAR_ID);
+
+        vm.expectRevert(UrbitVault.ZeroAddress.selector);
+        vault.depositStar(STAR_ID, address(0));
+        vm.stopPrank();
+    }
+
+    function test_depositMultipleStars_reverts_zeroRecipient() public {
+        uint32[] memory starIds = new uint32[](1);
+        starIds[0] = STAR_ID;
+
+        vm.startPrank(user1);
+        ecliptic.approve(address(vault), STAR_ID);
+
+        vm.expectRevert(UrbitVault.ZeroAddress.selector);
+        vault.depositMultipleStars(starIds, address(0));
+        vm.stopPrank();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                     CROSS-USER REDEMPTION
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_crossUser_redeemWithTransferredTokens() public {
+        // user1 deposits a star
+        _depositStar(STAR_ID, user1);
+
+        // user1 transfers tokens to user2
+        vm.startPrank(user1);
+        urbitToken.transfer(user2, URBIT_AMOUNT);
+        ustarToken.transfer(user2, USTAR_AMOUNT);
+        vm.stopPrank();
+
+        // user2 redeems the star
+        vm.prank(user2);
+        vault.redeemStar(STAR_ID);
+
+        assertEq(ecliptic.ownerOf(STAR_ID), user2);
+        assertEq(urbitToken.balanceOf(user2), 0);
+        assertEq(ustarToken.balanceOf(user2), 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //                       CONSTRUCTOR
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_constructor_reverts_zeroAzimuth() public {
+        vm.expectRevert(UrbitVault.ZeroAddress.selector);
+        new UrbitVault(address(0), address(urbitToken), address(ustarToken), false);
+    }
+
+    function test_constructor_reverts_zeroUrbitToken() public {
+        vm.expectRevert(UrbitVault.ZeroAddress.selector);
+        new UrbitVault(address(azimuth), address(0), address(ustarToken), false);
+    }
+
+    function test_constructor_reverts_zeroUstarToken() public {
+        vm.expectRevert(UrbitVault.ZeroAddress.selector);
+        new UrbitVault(address(azimuth), address(urbitToken), address(0), false);
     }
 
 }

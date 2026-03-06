@@ -14,7 +14,7 @@ This system allows users to:
 
 ### Core Contracts
 
-- **UrbitVault.sol** - Main contract managing star deposits and redemptions
+- **UrbitVault.sol** - Main contract managing star deposits, redemptions, and deposit whitelist
 - **UrbitToken.sol** - ERC20 + ERC20Permit token representing spawnable planets (URBIT)
 - **UstarToken.sol** - ERC20 + ERC20Permit token representing star ownership (USTAR)
 
@@ -98,10 +98,11 @@ The main contract that handles:
 - Validation of virgin stars (checks both networking keys and spawn proxy)
 - Accepting star deposits and minting tokens
 - Burning tokens and redeeming stars
+- Deposit whitelist management (optional, toggleable by owner)
 
-The vault is ownerless and immutable — no admin functions exist. Once deployed, it operates as a trustless protocol.
+The vault uses `Ownable2Step` for safe ownership management. The owner can manage a deposit whitelist and toggle it on or off. Once the whitelist is disabled and ownership is renounced, the vault becomes fully immutable.
 
-Inherits: `ReentrancyGuard`
+Inherits: `ReentrancyGuard`, `Ownable2Step`
 
 ### Token System
 
@@ -130,7 +131,7 @@ function depositStar(uint32 _starId, address _recipient) external
 function depositMultipleStars(uint32[] calldata _starIds, address _recipient) external
 ```
 
-- Deposits multiple stars in a single transaction
+- Deposits multiple stars in a single transaction (max 100)
 - More gas-efficient than individual deposits (single token mint call)
 
 **Redeem Star:**
@@ -141,20 +142,15 @@ function redeemStar(uint32 _starId) external
 
 - Burns tokens and returns a specified deposited star
 - Requires 65,535 URBIT and 1 USTAR tokens
-- Caller must have approved the vault to spend their tokens
 
-**Redeem Star with Permit:**
+**Redeem Multiple Stars:**
 
 ```solidity
-function redeemStarWithPermit(
-    uint32 _starId,
-    uint256 _urbitDeadline, uint8 _urbitV, bytes32 _urbitR, bytes32 _urbitS,
-    uint256 _ustarDeadline, uint8 _ustarV, bytes32 _ustarR, bytes32 _ustarS
-) external
+function redeemMultipleStars(uint32[] calldata _starIds) external
 ```
 
-- Same as `redeemStar` but uses EIP-2612 permit signatures for token approval
-- Allows redemption in a single transaction without a prior `approve` call
+- Redeems multiple stars in a single transaction (max 100)
+- More gas-efficient than individual redemptions (single token burn call)
 
 **Check Star Eligibility:**
 
@@ -162,7 +158,20 @@ function redeemStarWithPermit(
 function isEligibleStar(uint32 _starId) external view returns (bool)
 ```
 
-- Returns whether a star is eligible for deposit (virgin check)
+- Returns whether a star is eligible for deposit (checks star size, not already deposited, and virgin status)
+
+### For Owner
+
+**Whitelist Management:**
+
+```solidity
+function setWhitelist(address[] calldata _accounts, bool _status) external onlyOwner
+function setWhitelistEnabled(bool _enabled) external onlyOwner
+```
+
+- Add or remove addresses from the deposit whitelist
+- Toggle the whitelist on or off
+- To permanently disable: turn off the whitelist, then call `renounceOwnership()`
 
 ## Contract Addresses
 
@@ -173,9 +182,6 @@ function isEligibleStar(uint32 _starId) external view returns (bool)
 
 ### Sepolia Testnet
 
-- **UrbitToken**: `0x4d1c98b2eBCcd4C06A86f9B242577eB124f8db56`
-- **UstarToken**: `0x8B9114da545CaeBe36d4299E6F3FdcD8EcB76ac0`
-- **UrbitVault**: `0x12a769570A3296c8aaC05eBC96B397547D9cF63A`
 - Azimuth: `0xE6532b92148615418c1b4150dA4caC122b1C7F1a`
 - Ecliptic: `0xf49C4d09C0b98Fb2d199820eC99D22d39174D1A3`
 
@@ -183,14 +189,16 @@ function isEligibleStar(uint32 _starId) external view returns (bool)
 
 The test suite covers:
 
-- Star deposit functionality
-- Token redemption
+- Single and batch star deposits
+- Single and batch star redemptions
+- Recipient routing (`_recipient != msg.sender`)
+- Cross-user redemption (token transfer then redeem)
 - Virgin star validation
-- Permit-based redemption
-- Edge cases and error conditions
+- Zero-address and boundary condition reverts
+- Whitelist enforcement and toggling
+- Edge cases (deposit-redeem-redeposit cycles, duplicate IDs, selective redemption)
+- Constructor validation
 - Invariant fuzz testing (token supply ratios, deposit/redeem accounting)
-
-Static analysis via Slither passes with no findings above informational.
 
 ## License
 
