@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.34;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -10,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice ERC20 token representing spawnable Urbit planets.
  *         This contract is intended to be owned by, and used in conjunction with, the UrbitVault contract.
  */
-contract UrbitToken is ERC20, ERC20Permit, Ownable {
+contract UrbitToken is ERC20Permit, Ownable {
     /// @notice Initialize the UrbitToken contract
     constructor()
         ERC20("Urbit Token", "URBIT")
