@@ -175,13 +175,19 @@ function setWhitelistEnabled(bool _enabled) external onlyOwner
 
 ## Contract Addresses
 
-### Mainnet (Azimuth)
+### Mainnet
 
+- UrbitVault: `0x1f7738e782d8d3788892bf89edc8bab51ab2b4fc`
+- UrbitToken (URBIT): `0x91ab642dbbee7de690f541ae939776791a8ecbb8`
+- UstarToken (USTAR): `0xc70c300b1ef1688f57e2e173ef89dff9c1e3a16b`
 - Azimuth: `0x223c067f8cf28ae173ee5cafea60ca44c335fecb`
 - Ecliptic: `0x33EeCbf908478C10614626A9D304bfe18B78DD73`
 
 ### Sepolia Testnet
 
+- UrbitVault: `0xeE06A61bFD5c7e157A7CE3D7C058baB959eeA3C5`
+- UrbitToken (URBIT): `0x31473371715a8bA5471455d89a2137f3fbCc7dBd`
+- UstarToken (USTAR): `0x6eF4C3166e47FE073516e1535B3321a98f431538`
 - Azimuth: `0xE6532b92148615418c1b4150dA4caC122b1C7F1a`
 - Ecliptic: `0xf49C4d09C0b98Fb2d199820eC99D22d39174D1A3`
 
